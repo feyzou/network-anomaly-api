@@ -1,0 +1,35 @@
+services:
+  api:
+    build:
+      context: .
+      target: runtime
+    container_name: network-anomaly-api
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_PATH=/app/model/anomaly_detector.joblib
+      - MODEL_VERSION=1.0.0
+    volumes:
+      # Monte le dossier model localement pour faciliter les mises à jour
+      - ./model:/app/model:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # Profil optionnel : lance les tests dans le container
+  tests:
+    build:
+      context: .
+      target: builder
+    profiles: ["test"]
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: ["python", "-m", "pytest", "tests/", "-v", "--tb=short"]
+    environment:
+      - PYTHONPATH=/app
