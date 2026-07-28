@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Recuperer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Installer les dependances
+        run: pip install -r requirements-dev.txt
+
+      - name: Creer le dossier model
+        run: mkdir -p model
+
+      - name: Entrainer le modele dummy
+        run: python scripts/train_dummy_model.py
+
+      - name: Lancer les tests
+        run: pytest tests/ -v
+
+      - name: Verifier que l'API demarre
+        run: |
+          uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          sleep 5
+          curl -f http://localhost:8000/health
