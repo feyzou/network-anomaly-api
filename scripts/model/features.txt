@@ -1,0 +1,15 @@
+duration
+protocol
+src_port
+dst_port
+fwd_packets
+bwd_packets
+fwd_bytes
+bwd_bytes
+fwd_pkt_len_mean
+bwd_pkt_len_mean
+flow_iat_mean
+flow_iat_std
+syn_flag
+fin_flag
+rst_flag
