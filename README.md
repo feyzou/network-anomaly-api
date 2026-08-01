@@ -1,3 +1,4 @@
+![CI](https://github.com/feyzou/network-anomaly-api/actions/workflows/ci.yml/badge.svg)
 # Network Anomaly Detection API — Étape 1
 
 API REST de détection d'anomalies réseau, construite avec **FastAPI** et containerisée avec **Docker**.
