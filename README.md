@@ -95,8 +95,8 @@ Réponse :
 ## Roadmap MLOps
 
 - [x] **Étape 1** — FastAPI + Docker + tests (actuel)
-- [ ] **Étape 2** — MLflow : tracking des expériences et versioning du modèle
-- [ ] **Étape 3** — CI/CD avec GitHub Actions
+- [x] **Étape 2** — MLflow : tracking des expériences et versioning du modèle
+- [x] **Étape 3** — CI/CD avec GitHub Actions
 - [ ] **Étape 4** — Monitoring drift avec Evidently AI + Grafana
 
 ## Tests
@@ -116,3 +116,10 @@ make test
 - Intégration **MLflow** pour le tracking des expériences
 - Versionning du modèle et des métriques d'entraînement
 - Ajout d'un endpoint `/metrics` pour Prometheus
+
+## Résultats sur CICIDS2017
+
+| Modèle | F1 | ROC-AUC |
+|---|---|---|
+| IsolationForest | 0.410 | 0.408 |
+| RandomForest | 0.9998 | 1.000 |
