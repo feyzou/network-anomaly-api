@@ -10,13 +10,18 @@ pour que l'API puisse le charger.
 
 import numpy as np
 import joblib
-import mlflow
+
 import mlflow.sklearn
 from pathlib import Path
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
-
+try:
+    import mlflow
+    import mlflow.sklearn
+    MLFLOW_AVAILABLE = True
+except ImportError:
+    MLFLOW_AVAILABLE = False
 # ── Configuration ─────────────────────────────────────────────────────────────
 
 OUTPUT_PATH = Path("model/anomaly_detector.joblib")
@@ -106,48 +111,41 @@ print(f"  ROC-AUC   : {roc_auc:.4f}")
 # ── MLflow tracking ────────────────────────────────────────────────────────────
 
 print("Logging dans MLflow...")
+if MLFLOW_AVAILABLE:
+    try:
+        mlflow.set_tracking_uri("http://127.0.0.1:5000")
+        mlflow.set_experiment("anomaly-detection")
 
-# Pointe vers le serveur MLflow local
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+        with mlflow.start_run(run_name="isolation-forest-v1"):
+            mlflow.log_params(PARAMS)
+            mlflow.log_param("n_features", len(FEATURES))
+            mlflow.log_metrics({
+                "precision": precision,
+                "recall":    recall,
+                "f1":        f1,
+                "roc_auc":   roc_auc,
+            })
+            mlflow.sklearn.log_model(
+                sk_model=model,
+                artifact_path="model",
+                input_example=X_scaled[:1],
+            )
+            scaler_path = "model/scaler.joblib"
+            joblib.dump(scaler, scaler_path)
+            mlflow.log_artifact(scaler_path, artifact_path="scaler")
+            features_path = "model/features.txt"
+            with open(features_path, "w") as f:
+                f.write("\n".join(FEATURES))
+            mlflow.log_artifact(features_path, artifact_path="metadata")
+            run_id = mlflow.active_run().info.run_id
+            print(f"Run ID : {run_id}")
 
-# Crée l'experiment s'il n'existe pas
-mlflow.set_experiment("anomaly-detection")
-
-with mlflow.start_run(run_name="isolation-forest-v1"):
-
-    # 1. Log des hyperparamètres
-    mlflow.log_params(PARAMS)
-    mlflow.log_param("n_features", len(FEATURES))
-
-    # 2. Log des métriques
-    mlflow.log_metrics({
-        "precision": precision,
-        "recall":    recall,
-        "f1":        f1,
-        "roc_auc":   roc_auc,
-    })
-
-    # 3. Log du modèle sklearn (MLflow le sérialise lui-même)
-    mlflow.sklearn.log_model(
-        sk_model=model,
-        artifact_path="model",
-        input_example=X_scaled[:1],
-    )
-
-    # 4. Log du scaler comme artefact
-    scaler_path = "model/scaler.joblib"
-    joblib.dump(scaler, scaler_path)
-    mlflow.log_artifact(scaler_path, artifact_path="scaler")
-
-    # 5. Log de la liste des features (utile pour la reproductibilité)
-    features_path = "model/features.txt"
-    with open(features_path, "w") as f:
-        f.write("\n".join(FEATURES))
-    mlflow.log_artifact(features_path, artifact_path="metadata")
-
-    run_id = mlflow.active_run().info.run_id
-    print(f"Run ID : {run_id}")
-
+    except Exception as e:
+        print(f"MLflow non disponible ({e.__class__.__name__}) - sauvegarde locale uniquement")
+        run_id = "no-mlflow"
+else:
+    print("MLflow non installe - sauvegarde locale uniquement")
+    run_id = "no-mlflow"
 # ── Sauvegarde joblib (pour l'API) ─────────────────────────────────────────────
 
 bundle = {
